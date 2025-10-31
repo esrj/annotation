@@ -6,12 +6,12 @@ from django.conf import settings
 from django.shortcuts import render
 from django.http import HttpResponseServerError
 from datetime import datetime, timezone
-
+from django.views.decorators.csrf import csrf_exempt
 
 LS_URL = getattr(settings, "LABEL_STUDIO_URL")            # 例如: "https://app.humansignal.com"
 LS_TOKEN = getattr(settings, "LABEL_STUDIO_TOKEN")        # 這是你的 PAT（Personal Access Token）
 PROJECT_ID = int(getattr(settings, "PROJECT_ID"))
-MY_UID = 102090
+MY_UID = int(getattr(settings, "MY_UID"))
 task_ids = []
 
 def get_access_token():
@@ -160,6 +160,8 @@ def post_annotation(access, task_id, rating="0", relation="I"):
         return True, r.json()
     except requests.RequestException as e:
         return False, f"HTTP 錯誤：{e}"
+
+@csrf_exempt
 def index(request):
     access = get_access_token()
     if request.method == 'GET':
@@ -170,9 +172,6 @@ def index(request):
 
             global task_ids
             task_ids = [task["id"] for task in tasks]
-
-
-
 
             return render(request, "index.html", {
                 "tasks": enumerate(tasks, start=int(num_tasks_with_annotations)+1),
