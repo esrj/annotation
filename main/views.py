@@ -7,6 +7,8 @@ from django.shortcuts import render
 from django.http import HttpResponseServerError
 from datetime import datetime, timezone
 from django.views.decorators.csrf import csrf_exempt
+from concurrent.futures import ThreadPoolExecutor, as_completed
+MAX_WORKERS = 8
 import time
 
 LS_URL = getattr(settings, "LABEL_STUDIO_URL")            # 例如: "https://app.humansignal.com"
@@ -204,19 +206,114 @@ def index(request):
             batch = batch[:cut_index]
             task_ids = task_ids[:cut_index]
 
+        items = []
+        for task_id, data in zip(task_ids, batch):
+            items.append(
+                {
+                    "task": task_id,
+                    "rating": data["num"],
+                    "relation": data["aux"],
+                }
+            )
 
 
-        for id,data in zip(task_ids,batch):
-            ok, err = post_annotation(access, id, data['num'], data['aux'].upper())
-            if not ok:
-                print(err)
-                return JsonResponse({"errno": False})
-            else:
-                print(f"Task {id} 真實標註完成")
+        # 多線程
+        results = []
 
-        return JsonResponse({"errno": True, "received": len(batch)})
+        def _send_one(it):
+            return it["task"], post_annotation(
+                access,
+                it["task"],
+                it["rating"],
+                it["relation"],
+            )
+
+        with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            future_map = {executor.submit(_send_one, it): it for it in items}
+            for fut in as_completed(future_map):
+                it = future_map[fut]
+                task_id = it["task"]
+                try:
+                    task_id2, (ok1, err1) = fut.result()
+                except Exception as e:
+                    results.append((task_id, False, str(e)))
+                else:
+                    results.append((task_id2, ok1, err1))
+
+        failed = [r for r in results if not r[1]]
+        if failed:
+            return JsonResponse({
+                "errno": False,
+                "mode": "single-parallel",
+                "failed": failed,
+            })
+
+        return JsonResponse({
+            "errno": True,
+            "mode": "single-parallel",
+            "received": len(batch),
+        })
 
 
 
-# def table(request):
-#     pass
+        # for id,data in zip(task_ids,batch):
+        #     ok, err = post_annotation(access, id, data['num'], data['aux'].upper())
+        #     if not ok:
+        #         print(err)
+        #         return JsonResponse({"errno": False})
+        #     else:
+        #         print(f"Task {id} 真實標註完成")
+
+
+
+
+def table(request):
+    access = get_access_token()
+    inner_id, num_tasks_with_annotations = (get_views_id(project_id=PROJECT_ID, access_token=access))
+    inner_id -= 50
+    num_tasks_with_annotations -= 50
+    tasks = get_unlabeled_task(project_id=PROJECT_ID, token=access, inner_id=inner_id - 1, page=total)
+
+    history_datas = []
+    for task in tasks:
+        data = task.get("data", {})
+        query = data.get("query")
+        it_name = data.get("IT_NAME")
+        image_url = data.get("image_url")
+
+        # ----- 取 Annotation -----
+        ann_raw = task.get("annotations_results")
+
+        # 如果是字串 → 轉成 list
+        if isinstance(ann_raw, str):
+            ann_list = json.loads(ann_raw)
+        else:
+            ann_list = ann_raw
+
+        first_group = ann_list[0]
+
+        rating = None
+        relation = None
+
+        for ann in first_group:
+            if ann.get("from_name") == "rating":
+                rating = ann["value"]["choices"][0]
+            elif ann.get("from_name") == "relation":
+                relation = ann["value"]["choices"][0]
+
+        history_datas.append({
+            "inner_id":inner_id,
+            "num_tasks_with_annotations":num_tasks_with_annotations,
+            "query": query,
+            "IT_NAME": it_name,
+            "image_url": image_url,
+            "rating": rating,
+            "relation": relation,
+        })
+        inner_id += 1
+        num_tasks_with_annotations += 1
+
+
+    return render(request,'table.html', {
+        "history_datas": history_datas
+    })
