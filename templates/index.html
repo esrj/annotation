@@ -1,36 +1,88 @@
 <!doctype html>
 <html lang="en">
     <head>
+
+        <style>
+            #app-loader {
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            background: #fff;            /* 深色主題改成 #111 */
+            transition: opacity .3s ease;
+          }
+          #app-loader.hidden { opacity: 0; pointer-events: none; }
+          .spinner {
+            width: 48px; height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: #3085d6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin { to { transform: rotate(360deg); } }
+          html.loading, body.loading { overflow: hidden; }
+          .card-default { box-shadow: 0 2px 5px #cecece; }
+          .card-active  { box-shadow: 0 0 0 3px #ff3b30, 0 6px 14px rgba(0,0,0,.12) !important; }
+        </style>
         <!-- Required meta tags -->
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
 
         <!-- Bootstrap CSS -->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+        <!-- swal -->
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
         <title>Hello, world!</title>
     </head>
-    <style>
-      .card-default { box-shadow: 0 2px 5px #cecece; }
-      .card-active  { box-shadow: 0 0 0 3px #ff3b30, 0 6px 14px rgba(0,0,0,.12) !important; }
-    </style>
+
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
           <div class="container-fluid">
-            <a class="navbar-brand" href="#">Hello World</a>
-            
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-              <form class="d-flex">
-                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                <button class="btn btn-outline-success" type="submit">Search</button>
-              </form>
+            <a class="navbar-brand" href="#">Hello Annotation</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" >
+
+
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                      <a class="nav-link active" aria-current="page" href="#">Table</a>
+                    </li>
+                    <li class="nav-item" style="margin-left: 25px">
+                      <div class="col d-flex justify-content-center">
+                        <nav aria-label="Page navigation example">
+                          <ul class="pagination mb-0">
+                            <li class="page-item">
+                              <a style="color: #1a8755" class="page-link" href="#">&laquo;</a>
+                            </li>
+                            <li class="page-item">
+                              <a style="color: #1a8755" class="page-link">    {{ annotations }} ~ {{ annotations|add:19 }}</a>
+                            </li>
+                            <li class="page-item">
+                              <a style="color: #1a8755" class="page-link" href="#">&raquo;</a>
+                            </li>
+                          </ul>
+                        </nav>
+                      </div>
+                    </li>
+
+                </ul>
+                <form class="d-flex">
+                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                    <button class="btn btn-outline-success" type="submit">Search</button>
+                </form>
+              </div>
+
             </div>
+
+
           </div>
         </nav>
-        <div class="container">
-            <div class="row" >
+        <div style="margin: 50px">
+            <div class="row row-cols-5 g-3">
             {% for i,task in tasks %}
-                <div class="col-sm-3 d-flex" style="margin-top: 25px;  ">   <!-- 讓每張卡片同高 -->
+                <div class="col d-flex">
                     <div id="card_{{ i }}" class="card h-100 w-100 card-default" style="border:0; ">
                         <img src="{{ task.data.image_url }}" class="card-img-top" alt="...">
                         <div class="card-body d-flex flex-column">
@@ -57,13 +109,51 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
         -->
     </body>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
+
+        // ========================== loading  ==========================
+        function ensureLoader() {
+          let el = document.getElementById('app-loader');
+          if (!el) {
+            el = document.createElement('div');
+            el.id = 'app-loader';
+            el.innerHTML = '<div class="spinner"></div>';
+            // 需要你的 CSS 已定義 #app-loader、.spinner
+            document.body.appendChild(el);
+          }
+          return el;
+        }
+        function showLoader() {
+          const el = ensureLoader();
+          el.classList.remove('hidden');
+          document.documentElement.classList.add('loading'); // 若你在 CSS 有禁止捲動
+          document.body.classList.add('loading');
+        }
+        function hideLoader() {
+          const el = document.getElementById('app-loader');
+          if (!el) return;
+          el.classList.add('hidden'); // 有 transition 的話會淡出
+          setTimeout(() => {
+            // 如果你想保留節點，下行可拿掉
+            // el.remove();
+            document.documentElement.classList.remove('loading');
+            document.body.classList.remove('loading');
+          }, 300); // 對齊你的 CSS transition 時間
+        }
+
+
+
+        // ========================== 所有快捷設定 ==========================
         let id_ = Number({{ annotations }});
+        let total = Number({{ total }});
         let current_id = id_;
 
         (function () {
+          showLoader();
+
           const BASE = id_;
-          const MAX  = BASE + 19; // 本頁 10 張卡
+          const MAX  = BASE + total - 1; // 本頁 10 張卡
           let $type  = document.getElementById(`type_${current_id}`);
 
           let currentNum = null; // 0~4
@@ -100,7 +190,6 @@
             }
           }
 
-          // ===== 標註鍵映射（排除 Ctrl/⌘ 組合，避免 Ctrl+` 被當成 0） =====
           function mapKey(ev) {
             const k = ev.key;
             const c = ev.code;
@@ -130,7 +219,6 @@
             if (combo !== lastCombo) lastCombo = combo;
           }
 
-          // ===== 標註鍵：0/1/2/3/4 + i/e/s/c =====
           window.addEventListener('keydown', (ev) => {
             if (ev.isComposing || ev.keyCode === 229) return;
 
@@ -153,13 +241,11 @@
             }
           });
 
-          // ===== 導航：方向鍵 + Ctrl+`（或 ⌘+` 想支援就把 metaKey 打開） =====
           window.addEventListener('keydown', (ev) => {
             if (ev.isComposing || ev.keyCode === 229) return;
 
             const prev = current_id;
 
-            // Ctrl+` → 往右一格（如需支援 mac ⌘+`，把 ev.metaKey 加進判斷）
             if ((ev.ctrlKey /*|| ev.metaKey*/) && (ev.key === '`' || ev.code === 'Backquote')) {
               current_id = clampId(current_id + 1);
               applySelectionChange(prev);   // ← 這裡就高亮
@@ -169,10 +255,10 @@
 
             switch (ev.key) {
               case 'ArrowUp':
-                current_id = clampId(current_id - 4);
+                current_id = clampId(current_id - 5);
                 break;
               case 'ArrowDown':
-                current_id = clampId(current_id + 4);
+                current_id = clampId(current_id + 5);
                 break;
               case 'ArrowLeft':
                 current_id = clampId(current_id - 1);
@@ -185,17 +271,21 @@
             }
             applySelectionChange(prev);
           });
+
+          hideLoader();
+
         })();
 
 
 
         // ========================== request ==========================
+
         function getCookie(name){
           const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
           return m ? m.pop() : null;
         }
 
-        function gatherBatch(baseId, count = 20) {
+        function gatherBatch(baseId, count ) {
           const out = [];
           for (let i = baseId; i < baseId + count; i++) {
             const el = document.getElementById(`type_${i}`);
@@ -215,7 +305,7 @@
         }
 
         // 發送到 "/"：POST JSON
-        async function postBatchLabels(baseId, count = 20) {
+        async function postBatchLabels(baseId, count ) {
           const batch = gatherBatch(baseId, count);
           const headers = { 'Content-Type': 'application/json' };
 
@@ -236,16 +326,51 @@
           // 後端若回 JSON 就 parse，否則回 {}
           try { return await res.json(); } catch { return {}; }
         }
+        window.addEventListener('beforeunload', () => {
+          if (typeof showLoader === 'function') showLoader();
+        });
 
-        // 需要時呼叫：例如按 Enter 送出目前這 10 張
-        // 假設你的起始 i 放在全域變數 id_
-        window.addEventListener('keydown', (e) => {
+        window.addEventListener('keydown', async (e) => {
+          // 避免在輸入框裡誤觸
+          const t = e.target, tag = (t.tagName || '').toLowerCase();
+          const isTyping = tag === 'input' || tag === 'textarea' || t.isContentEditable;
+          if (isTyping) return;
+
           if (e.key === 'Enter') {
-            postBatchLabels(id_, 20).then(r => {
-              console.log('已送出 10 筆：', r);
-            }).catch(err => console.error(err));
+            e.preventDefault();
+            e.stopPropagation();
+
+            // ① 先出現「寫入中…」的 Swal（只有這裡用 Swal）
+            Swal.fire({
+              title: '寫入中…',
+              html: '請稍候',
+              allowOutsideClick: false,
+              allowEscapeKey: false,
+              didOpen: () => Swal.showLoading()
+            });
+
+            try {
+              const r = await postBatchLabels(id_, total);   // ← 你的寫入 API，要回傳 Promise/JSON
+
+              // 關掉「寫入中…」的 Swal
+              Swal.close();
+
+              if (r && r.errno === true) {
+                // ② 寫入成功 → 切換成全頁轉圈圈（overlay），接著導頁/重整
+                if (typeof showLoader === 'function') showLoader();
+                // 可用 reload 或跳下一頁
+                location.reload();          // 或 location.href = `?start=${id_+10}`;
+              } else {
+                Swal.fire({ icon: 'error', title: '系統錯誤', text: '請聯絡管理員' });
+              }
+            } catch (err) {
+              Swal.close();
+              Swal.fire({ icon: 'error', title: '網路錯誤', text: err?.message || '請稍後再試' });
+            }
           }
         });
+
+
     </script>
 
 </html>

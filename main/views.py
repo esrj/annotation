@@ -7,13 +7,14 @@ from django.shortcuts import render
 from django.http import HttpResponseServerError
 from datetime import datetime, timezone
 from django.views.decorators.csrf import csrf_exempt
+import time
 
 LS_URL = getattr(settings, "LABEL_STUDIO_URL")            # 例如: "https://app.humansignal.com"
 LS_TOKEN = getattr(settings, "LABEL_STUDIO_TOKEN")        # 這是你的 PAT（Personal Access Token）
 PROJECT_ID = int(getattr(settings, "PROJECT_ID"))
 MY_UID = int(getattr(settings, "MY_UID"))
 task_ids = []
-
+total = 50
 def get_access_token():
 
     refresh_url = f"{LS_URL}/api/token/refresh/"
@@ -40,12 +41,7 @@ def get_view_data(ls_url: str, token: str, view_id: int) -> dict:
     return data
 
 
-# 假設你已有：
-# LS_URL = "https://app.humansignal.com"
-# def make_headers(token): return {"Authorization": f"Token {token}"}
-# 可選：VIEW_ID = 423937  # 若有設定就會自動帶上
-
-def get_unlabeled_task(project_id: int, token: str, inner_id: int):
+def get_unlabeled_task(project_id: int, token: str, inner_id: int, page):
 
     headers = make_headers(token)
 
@@ -66,7 +62,7 @@ def get_unlabeled_task(project_id: int, token: str, inner_id: int):
 
     params = {
         "project": project_id,
-        "page_size": 20,
+        "page_size": page,
         "page": 1,
         "fields": "task_only",
         "query": json.dumps(query_obj)
@@ -166,9 +162,9 @@ def index(request):
     access = get_access_token()
     if request.method == 'GET':
         try:
-
             inner_id,num_tasks_with_annotations = (get_views_id(project_id=PROJECT_ID, access_token=access))
-            tasks = get_unlabeled_task(project_id=PROJECT_ID, token=access,inner_id=inner_id-1)
+
+            tasks = get_unlabeled_task(project_id=PROJECT_ID, token=access,inner_id=inner_id-1,page = total)
 
             global task_ids
             task_ids = [task["id"] for task in tasks]
@@ -176,7 +172,8 @@ def index(request):
             return render(request, "index.html", {
                 "tasks": enumerate(tasks, start=int(num_tasks_with_annotations)+1),
                 "project_id": PROJECT_ID,
-                "annotations":int(num_tasks_with_annotations)+1
+                "annotations":int(num_tasks_with_annotations)+1,
+                "total":total # 這次抽取了幾個
             })
 
         except requests.HTTPError as e:
@@ -196,13 +193,30 @@ def index(request):
             return HttpResponseBadRequest("Invalid JSON")
 
         batch = payload.get("batch", [])
+        cut_index = None
+
+        for idx, b in enumerate(batch):
+            if b['num'] is None or b['aux'] is None or '_' in b['combo']:
+                cut_index = idx
+                break
+
+        if cut_index is not None:
+            batch = batch[:cut_index]
+            task_ids = task_ids[:cut_index]
+
+
 
         for id,data in zip(task_ids,batch):
             ok, err = post_annotation(access, id, data['num'], data['aux'].upper())
             if not ok:
                 print(err)
+                return JsonResponse({"errno": False})
             else:
                 print(f"Task {id} 真實標註完成")
 
-        return JsonResponse({"ok": True, "received": len(batch)})
+        return JsonResponse({"errno": True, "received": len(batch)})
 
+
+
+# def table(request):
+#     pass
