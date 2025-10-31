@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <!-- Bootstrap CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+
+        <title>Hello, world!</title>
+    </head>
+    <style>
+      .card-default { box-shadow: 0 2px 5px #cecece; }
+      .card-active  { box-shadow: 0 0 0 3px #ff3b30, 0 6px 14px rgba(0,0,0,.12) !important; }
+    </style>
+    <body>
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+          <div class="container-fluid">
+            <a class="navbar-brand" href="#">Hello World</a>
+            
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+              <form class="d-flex">
+                <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-success" type="submit">Search</button>
+              </form>
+            </div>
+          </div>
+        </nav>
+        <div class="container">
+            <div class="row" >
+            {% for i,task in tasks %}
+                <div class="col-sm-3 d-flex" style="margin-top: 25px;  ">   <!-- 讓每張卡片同高 -->
+                    <div id="card_{{ i }}" class="card h-100 w-100 card-default" style="border:0; ">
+                        <img src="{{ task.data.image_url }}" class="card-img-top" alt="...">
+                        <div class="card-body d-flex flex-column">
+                            <h6 class="card-title">{{ i }}/30000</h6>
+
+                            <h4 class="card-title">{{ task.data.query }}</h4>
+                            <p class="card-text flex-grow-1">{{ task.data.IT_NAME }}</p>
+                            <span id="type_{{ i }}">_</span>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+            </div>
+        </div>
+
+        <!-- Optional JavaScript; choose one of the two! -->
+
+        <!-- Option 1: Bootstrap Bundle with Popper -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
+
+        <!-- Option 2: Separate Popper and Bootstrap JS -->
+        <!--
+        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
+        -->
+    </body>
+    <script>
+        let id_ = Number({{ annotations }});
+        let current_id = id_;
+
+        (function () {
+          const BASE = id_;
+          const MAX  = BASE + 19; // 本頁 10 張卡
+          let $type  = document.getElementById(`type_${current_id}`);
+
+          let currentNum = null; // 0~4
+          let currentAux = null; // i/e/s/c
+          let lastCombo  = null;
+
+          // ===== 卡片高亮/還原 =====
+          function highlightCard(id) {
+              const el = document.getElementById(`card_${id}`);
+              if (!el) return;
+              // 換紅框
+              document.querySelectorAll('.card-active').forEach(x => x.classList.remove('card-active'));
+              el.classList.remove('card-default');
+              el.classList.add('card-active');
+              // 置中顯示
+              el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }
+          function dimCard(id) {
+            const el = document.getElementById(`card_${id}`);
+            if (!el) return;
+            el.classList.remove('card-active');
+            el.classList.add('card-default');
+          }
+          highlightCard(current_id);
+
+          // ===== 工具 =====
+          const clampId = (v) => Math.max(BASE, Math.min(MAX, v));
+
+          function applySelectionChange(prevId) {
+            if (prevId !== current_id) {
+              dimCard(prevId);
+              highlightCard(current_id);
+              $type = document.getElementById(`type_${current_id}`);
+            }
+          }
+
+          // ===== 標註鍵映射（排除 Ctrl/⌘ 組合，避免 Ctrl+` 被當成 0） =====
+          function mapKey(ev) {
+            const k = ev.key;
+            const c = ev.code;
+
+            if (ev.ctrlKey || ev.metaKey) return null; // ← 關鍵：Ctrl/⌘ 組合給導航用
+
+            // 類型組
+            if (k === 'Tab') return { type: 'aux', value: 'i', prevent: true };
+            if (k === 'e' || k === 'E') return { type: 'aux', value: 'e' };
+            if (k === 's' || k === 'S') return { type: 'aux', value: 's' };
+            if (k === 'c' || k === 'C') return { type: 'aux', value: 'c' };
+
+            // 數字組
+            if (k === '`' || c === 'Backquote') return { type: 'num', value: '0' };
+            if (k === '1' || c === 'Digit1' || c === 'Numpad1') return { type: 'num', value: '1' };
+            if (k === '2' || c === 'Digit2' || c === 'Numpad2') return { type: 'num', value: '2' };
+            if (k === '3' || c === 'Digit3' || c === 'Numpad3') return { type: 'num', value: '3' };
+            if (k === '4' || c === 'Digit4' || c === 'Numpad4') return { type: 'num', value: '4' };
+
+            return null;
+          }
+
+          function updateDisplay() {
+            if (!$type) return;
+            const combo = (currentNum || '_') + (currentAux || '_');
+            $type.textContent = combo;
+            if (combo !== lastCombo) lastCombo = combo;
+          }
+
+          // ===== 標註鍵：0/1/2/3/4 + i/e/s/c =====
+          window.addEventListener('keydown', (ev) => {
+            if (ev.isComposing || ev.keyCode === 229) return;
+
+            const res = mapKey(ev);
+            if (!res) return;
+
+            if (res.prevent) ev.preventDefault(); // Tab 不跳焦點
+
+            if (res.type === 'num') {
+              currentNum = res.value;
+              $type = document.getElementById(`type_${current_id}`);
+              updateDisplay();
+              return;
+            }
+            if (res.type === 'aux') {
+              currentAux = res.value;
+              $type = document.getElementById(`type_${current_id}`);
+              updateDisplay();
+              return;
+            }
+          });
+
+          // ===== 導航：方向鍵 + Ctrl+`（或 ⌘+` 想支援就把 metaKey 打開） =====
+          window.addEventListener('keydown', (ev) => {
+            if (ev.isComposing || ev.keyCode === 229) return;
+
+            const prev = current_id;
+
+            // Ctrl+` → 往右一格（如需支援 mac ⌘+`，把 ev.metaKey 加進判斷）
+            if ((ev.ctrlKey /*|| ev.metaKey*/) && (ev.key === '`' || ev.code === 'Backquote')) {
+              current_id = clampId(current_id + 1);
+              applySelectionChange(prev);   // ← 這裡就高亮
+              ev.preventDefault();
+              return;
+            }
+
+            switch (ev.key) {
+              case 'ArrowUp':
+                current_id = clampId(current_id - 4);
+                break;
+              case 'ArrowDown':
+                current_id = clampId(current_id + 4);
+                break;
+              case 'ArrowLeft':
+                current_id = clampId(current_id - 1);
+                break;
+              case 'ArrowRight':
+                current_id = clampId(current_id + 1);
+                break;
+              default:
+                return;
+            }
+            applySelectionChange(prev);
+          });
+        })();
+
+
+
+        // ========================== request ==========================
+        function getCookie(name){
+          const m = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+          return m ? m.pop() : null;
+        }
+
+        function gatherBatch(baseId, count = 20) {
+          const out = [];
+          for (let i = baseId; i < baseId + count; i++) {
+            const el = document.getElementById(`type_${i}`);
+            const combo = (el && el.textContent || '').trim();
+
+            const num = combo[0] && '01234'.includes(combo[0]) ? combo[0] : null;
+            const aux = combo[1] && 'iesc'.includes(combo[1]) ? combo[1] : null;
+
+            out.push({
+              index: i,          // 你的 i
+              num,               // '0'~'4' 或 null
+              aux,               // 'i'|'e'|'s'|'c' 或 null
+              combo: (num ?? '_') + (aux ?? '_')
+            });
+          }
+          return out;
+        }
+
+        // 發送到 "/"：POST JSON
+        async function postBatchLabels(baseId, count = 20) {
+          const batch = gatherBatch(baseId, count);
+          const headers = { 'Content-Type': 'application/json' };
+
+          const csrftoken = getCookie('csrftoken');
+          if (csrftoken) headers['X-CSRFToken'] = csrftoken;   // Django 需要
+
+          const res = await fetch('/', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ batch }),   // 後端就收 { "batch": [...] }
+            credentials: 'same-origin'
+          });
+
+          if (!res.ok) {
+            const text = await res.text().catch(()=>'');
+            throw new Error(`POST / 失敗：${res.status} ${text}`);
+          }
+          // 後端若回 JSON 就 parse，否則回 {}
+          try { return await res.json(); } catch { return {}; }
+        }
+
+        // 需要時呼叫：例如按 Enter 送出目前這 10 張
+        // 假設你的起始 i 放在全域變數 id_
+        window.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            postBatchLabels(id_, 20).then(r => {
+              console.log('已送出 10 筆：', r);
+            }).catch(err => console.error(err));
+          }
+        });
+    </script>
+
+</html>
