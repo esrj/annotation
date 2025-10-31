@@ -36,9 +36,10 @@
 
     <body>
         
+        {% block nav %}
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
           <div class="container-fluid">
-            <a class="navbar-brand" href="#">Hello Annotation</a>
+            <a class="navbar-brand" href="/">Hello Annotation</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
@@ -49,19 +50,16 @@
                     <li class="nav-item">
                       <a class="nav-link active" aria-current="page" href="/table/">Table</a>
                     </li>
+                    
                     <li class="nav-item" style="margin-left: 25px">
                       <div class="col d-flex justify-content-center">
                         <nav aria-label="Page navigation example">
                           <ul class="pagination mb-0">
+                            
                             <li class="page-item">
-                              <a style="color: #1a8755" class="page-link" href="#">&laquo;</a>
+                              <a style="color: #1a8755" class="page-link">    {{ annotations }} ~ {{ annotations|add:49 }}</a>
                             </li>
-                            <li class="page-item">
-                              <a style="color: #1a8755" class="page-link">    {{ annotations }} ~ {{ annotations|add:19 }}</a>
-                            </li>
-                            <li class="page-item">
-                              <a style="color: #1a8755" class="page-link" href="#">&raquo;</a>
-                            </li>
+                            
                           </ul>
                         </nav>
                       </div>
@@ -78,6 +76,7 @@
 
 
         </nav>
+        {% endblock %}
         
         {% block content %}
         <div style="margin: 50px">
@@ -115,7 +114,19 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
 
+
         // ========================== loading  ==========================
+        
+        if ('scrollRestoration' in history) {
+          history.scrollRestoration = 'manual';
+        }
+        // 即使使用 bfcache 快取回來，也強制回頂
+        window.addEventListener('pageshow', () => {
+          window.scrollTo(0, 0);
+        });
+        
+        
+        
         function ensureLoader() {
           let el = document.getElementById('app-loader');
           if (!el) {
@@ -144,6 +155,40 @@
             document.body.classList.remove('loading');
           }, 300); // 對齊你的 CSS transition 時間
         }
+        
+        //==========================  IT_NAME & query  ========================== 
+        (function () {
+            
+              // 所有卡片：你是用 i 當 index，所以找所有可能的 card-body
+              const cards = document.querySelectorAll('.card .card-body');
+              cards.forEach((card) => {
+                const titleEl = card.querySelector('h4.card-title');         // 放 query
+                const textEl  = card.querySelector('p.card-text');           // 放 IT_NAME
+                if (!titleEl || !textEl) return;
+        
+                const query = (titleEl.textContent || '').trim();
+                const itName = textEl.textContent || '';
+        
+                if (!query) return;
+        
+                // 不分大小寫找位置
+                const idx = itName.toLowerCase().indexOf(query.toLowerCase());
+                if (idx === -1) return;  // 沒找到就跳過
+        
+                const before = itName.slice(0, idx);
+                const match  = itName.slice(idx, idx + query.length);
+                const after  = itName.slice(idx + query.length);
+        
+                // 用 mark 包住
+                textEl.innerHTML =
+                  before +
+                  '<mark style="background: #fff59d; padding: 0 2px;">' +
+                  match +
+                  '</mark>' +
+                  after;
+              });
+            })();
+
 
 
 
@@ -163,16 +208,16 @@
           let currentAux = null; // i/e/s/c
           let lastCombo  = null;
 
-          // ===== 卡片高亮/還原 =====
-          function highlightCard(id) {
+            function highlightCard(id, { scroll = false } = {}) {
               const el = document.getElementById(`card_${id}`);
               if (!el) return;
-              // 換紅框
               document.querySelectorAll('.card-active').forEach(x => x.classList.remove('card-active'));
               el.classList.remove('card-default');
               el.classList.add('card-active');
-              // 置中顯示
-              el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            
+              if (scroll) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+              }
             }
           function dimCard(id) {
             const el = document.getElementById(`card_${id}`);
@@ -180,15 +225,14 @@
             el.classList.remove('card-active');
             el.classList.add('card-default');
           }
-          highlightCard(current_id);
+          highlightCard(current_id, { scroll: false });
 
-          // ===== 工具 =====
           const clampId = (v) => Math.max(BASE, Math.min(MAX, v));
 
           function applySelectionChange(prevId) {
             if (prevId !== current_id) {
               dimCard(prevId);
-              highlightCard(current_id);
+              highlightCard(current_id, { scroll: true });
               $type = document.getElementById(`type_${current_id}`);
             }
           }
@@ -278,7 +322,9 @@
           hideLoader();
 
         })();
-
+        
+        
+        
 
 
         // ========================== request ==========================
@@ -307,7 +353,6 @@
           return out;
         }
 
-        // 發送到 "/"：POST JSON
         async function postBatchLabels(baseId, count ) {
           const batch = gatherBatch(baseId, count);
           const headers = { 'Content-Type': 'application/json' };
@@ -361,17 +406,17 @@
               if (r && r.errno === true) {
                 // ② 寫入成功 → 切換成全頁轉圈圈（overlay），接著導頁/重整
                 if (typeof showLoader === 'function') showLoader();
-                // 可用 reload 或跳下一頁
-                location.reload();          // 或 location.href = `?start=${id_+10}`;
-              } else {
-                Swal.fire({ icon: 'error', title: '系統錯誤', text: '請聯絡管理員' });
+                    window.scrollTo({ top: 0 });
+                    location.reload();          // 或 location.href = `?start=${id_+10}`;
+                } else {
+                    Swal.fire({ icon: 'error', title: '系統錯誤', text: '請聯絡管理員' });
+                }
+              } catch (err) {
+                  Swal.close();
+                  Swal.fire({ icon: 'error', title: '網路錯誤', text: err?.message || '請稍後再試' });
+                }
               }
-            } catch (err) {
-              Swal.close();
-              Swal.fire({ icon: 'error', title: '網路錯誤', text: err?.message || '請稍後再試' });
-            }
-          }
-        });
+            });
 
 
     </script>

@@ -303,7 +303,7 @@ def table(request):
 
         history_datas.append({
             "inner_id":inner_id,
-            "num_tasks_with_annotations":num_tasks_with_annotations,
+            "num_tasks_with_annotations":num_tasks_with_annotations+1,
             "query": query,
             "IT_NAME": it_name,
             "image_url": image_url,
@@ -315,5 +315,6 @@ def table(request):
 
 
     return render(request,'table.html', {
-        "history_datas": history_datas
+        "history_datas": history_datas,
+        "annotations" :num_tasks_with_annotations-49
     })
