@@ -5,13 +5,13 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
-        <title>Hello, world!</title>
+        <title>土司三明治</title>
     </head>
 
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
           <div class="container-fluid">
-            <a class="navbar-brand" href="/">Hello Annotation</a>
+            <a style="color: #1a8755 ; font-weight: 900" class="navbar-brand" href="/">土司三明治</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
@@ -20,21 +20,17 @@
 
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                      <a class="nav-link active" aria-current="page" href="/table/">Table</a>
+                      <a class="nav-link active" aria-current="page" href="/table/">歷史紀錄</a>
                     </li>
                     <li class="nav-item" style="margin-left: 25px">
                       <div class="col d-flex justify-content-center">
                         <nav aria-label="Page navigation example">
                           <ul class="pagination mb-0">
                             <li class="page-item">
-                              <a style="color: #1a8755" class="page-link" href="#">&laquo;</a>
+                              <a style="color: #1a8755" class="page-link" href="#" onclick="previos()">&laquo;</a>
                             </li>
                             <li class="page-item">
-                              <a style="color: #1a8755" class="page-link">    {{ annotations }} ~ {{ annotations|add:49 }}</a>
-                            </li>
-
-                            <li class="page-item">
-                              <a style="color: #1a8755" class="page-link" href="#">&raquo;</a>
+                                <a style="color: #1a8755" class="page-link">    <span id="start">{{ annotations }}</span> ~ {{ annotations|add:99 }}</a>
                             </li>
                           </ul>
                         </nav>
@@ -46,42 +42,396 @@
                     <button class="btn btn-outline-success" type="submit">Search</button>
                 </form>
               </div>
-
             </div>
-
-
         </nav>
 
         <table class="table table-hover">
-            <tbody>
+            <tbody id="history">
 
             {% for data in history_datas %}
-            <tr>
+            <tr
+              data-inner-id="{{ data.inner_id }}"
+              data-task-id="{{ data.task_id }}"
+              data-num-tasks-with-annotations="{{ data.num_tasks_with_annotations }}"
+              data-rating="{{ data.rating }}"
+              data-relation="{{ data.relation }}"
+              data-image-url="{{ data.image_url|escape }}"
+              data-query="{{ data.query|escape }}"
+              data-it-name="{{ data.IT_NAME|escape }}"
+              onclick="edit_history_row(this)">
+
               <th scope="row">{{ data.num_tasks_with_annotations }}</th>
-              <th scope="row">{{ data.rating }}</th>
-              <td scope="row">{{ data.relation }}</td>
-              <td><img style="width: 50px" src="{{ data.image_url }}"></td>
-              <th scope="row">{{ data.query }}</th>
-              <td scope="row">{{ data.IT_NAME }}</td>
+              <td class="col-rating">{{ data.rating }}</td>
+              <td class="col-relation">{{ data.relation }}</td>
+              <td><img style="width:60px" src="{{ data.image_url|escape }}" alt=""></td>
+              <td>{{ data.query }}</td>
+              <td>{{ data.IT_NAME }}</td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
-        
 
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+          <div class="offcanvas-header">
+            <h2 id="offcanvasRightLabel"></h2>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
 
-        <!-- Optional JavaScript; choose one of the two! -->
-
-        <!-- Option 1: Bootstrap Bundle with Popper -->
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
-
-        <!-- Option 2: Separate Popper and Bootstrap JS -->
-        <!--
-        <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosVNubq5LC7Qb9DXgDA9i+tQ8Zj3iwWAwPtgFTxbJ8NT4GN1R8p" crossorigin="anonymous"></script>
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.min.js" integrity="sha384-cVKIPhGWiC2Al4u+LWgxfKTRIcfu0JTxR+EQDz/bgldoEyl4H0zUF0QKbrJ0EcQF" crossorigin="anonymous"></script>
-        -->
+          </div>
+        </div>
     </body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script>
 
 
+    // =================== 初始化全域變數 ===================
+    window.currentAnnotations = Number('{{ annotations|default:"0" }}');
+    window.currentInnerId     = Number('{{ inner_id|default:"0" }}');
+
+    const EDIT_URL = "/edit/";
+
+    // =================== 編輯狀態 ======================
+    window._edit_state = { task_id:null, inner_id:null, rating:null, relation:null };
+
+    function setEditState(data) {
+      window._edit_state.inner_id = Number(data.inner_id);
+      window._edit_state.task_id  = data.task_id ?? null;
+      window._edit_state.rating   = Number(data.rating ?? 0);
+      window._edit_state.relation = String(data.relation ?? '').toUpperCase();
+    }
+
+    // =================== Offcanvas 鍵盤快捷鍵（只在開啟時啟用） ======================
+    (function bindOffcanvasKeybinds(){
+      const oc = document.getElementById('offcanvasRight');
+      if (!oc) return;
+
+      const handler = (e) => {
+        if (!window._edit_state?.inner_id) return;
+        let changed = false;
+
+        // Rating: `=0；1~4
+        if (["`","1","2","3","4"].includes(e.key)) {
+          window._edit_state.rating = (e.key === "`") ? 0 : Number(e.key);
+          changed = true;
+        }
+
+        // Relation: Tab/e/s/c -> I/E/S/C
+        if (e.key === "Tab") {
+          e.preventDefault();
+          window._edit_state.relation = "I";
+          changed = true;
+        } else if (e.key.length === 1) {
+          const k = e.key.toLowerCase();
+          if (k === "e") { window._edit_state.relation = "E"; changed = true; }
+          if (k === "s") { window._edit_state.relation = "S"; changed = true; }
+          if (k === "c") { window._edit_state.relation = "C"; changed = true; }
+        }
+
+        if (!changed) return;
+
+        // 同步到 Offcanvas UI
+        const body = document.querySelector("#offcanvasRight .offcanvas-body");
+        body?.querySelector("#edit-rating")?.replaceChildren(document.createTextNode(String(window._edit_state.rating)));
+        body?.querySelector("#edit-relation")?.replaceChildren(document.createTextNode(window._edit_state.relation));
+      };
+
+      oc.addEventListener('shown.bs.offcanvas',  () => document.addEventListener('keydown', handler));
+      oc.addEventListener('hidden.bs.offcanvas', () => document.removeEventListener('keydown', handler));
+    })();
+
+    // =================== 小工具 ======================
+    function getCookie(name) {
+      const m = document.cookie.match(`(?:^|; )${name}=([^;]*)`);
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+    function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;'}[m])); }
+
+    // ------- 表格列的樂觀更新 / 確認 / 還原 -------
+    function rowOptimisticUpdate(inner_id, rating, relation) {
+      const row = document.querySelector(`#history tr[data-inner-id="${inner_id}"]`);
+      if (!row) return;
+
+      const rCell  = row.querySelector('.col-rating');
+      const relCell= row.querySelector('.col-relation');
+
+      if (rCell && row.dataset.oldRating === undefined)    row.dataset.oldRating    = rCell.textContent ?? '';
+      if (relCell && row.dataset.oldRelation === undefined)row.dataset.oldRelation  = relCell.textContent ?? '';
+
+      if (rCell)   rCell.textContent   = String(rating);
+      if (relCell) relCell.textContent = String(relation);
+
+      row.dataset.updating = '1';
+      row.style.opacity = '0.6';
+    }
+    function rowConfirmUpdate(inner_id) {
+      const row = document.querySelector(`#history tr[data-inner-id="${inner_id}"]`);
+      if (!row) return;
+      delete row.dataset.oldRating;
+      delete row.dataset.oldRelation;
+      delete row.dataset.updating;
+      row.style.opacity = '';
+    }
+    function rowRevertUpdate(inner_id) {
+      const row = document.querySelector(`#history tr[data-inner-id="${inner_id}"]`);
+      if (!row) return;
+
+      const rCell  = row.querySelector('.col-rating');
+      const relCell= row.querySelector('.col-relation');
+
+      if (rCell && row.dataset.oldRating !== undefined)     rCell.textContent   = row.dataset.oldRating;
+      if (relCell && row.dataset.oldRelation !== undefined) relCell.textContent = row.dataset.oldRelation;
+
+      delete row.dataset.oldRating;
+      delete row.dataset.oldRelation;
+      delete row.dataset.updating;
+      row.style.opacity = '';
+    }
+
+    // =================== 點 row 開啟 Offcanvas（事件委派） ======================
+    (function bindRowClick(){
+      const history = document.getElementById('history');
+      if (!history || history._bound) return;
+      history._bound = true;
+
+      history.addEventListener('click', (e) => {
+        const tr = e.target.closest('tr[data-inner-id]');
+        if (!tr || !history.contains(tr)) return;
+        edit_history_row(tr);
+      });
+    })();
+
+    function edit_history_row(tr) {
+      // 儘量從 data-* 拿；沒有的話從儲存格補
+      const cells = tr.children;
+      const d = {
+        inner_id: Number(tr.dataset.innerId),
+        task_id:  tr.dataset.taskId ? Number(tr.dataset.taskId) : null,
+        num_tasks_with_annotations: Number(tr.dataset.numTasksWithAnnotations || 0),
+        rating:   tr.dataset.rating !== undefined && tr.dataset.rating !== '' ? Number(tr.dataset.rating) : (cells[1] ? Number(cells[1].textContent.trim() || 0) : 0),
+        relation: tr.dataset.relation || (cells[2] ? cells[2].textContent.trim() : ''),
+        image_url: tr.dataset.imageUrl || (cells[3]?.querySelector('img')?.getAttribute('src') || ''),
+        query:     tr.dataset.query || (cells[4] ? cells[4].textContent.trim() : ''),
+        IT_NAME:   tr.dataset.itName || (cells[5] ? cells[5].textContent.trim() : ''),
+      };
+      edit_history(d);
+    }
+
+    // =================== 送 PATCH /edit ======================
+    async function save_edit() {
+      const { task_id, inner_id, rating, relation } = window._edit_state || {};
+      if (!task_id || inner_id == null || rating == null || !relation) {
+        Swal.fire({ icon:'error', title:'欄位缺失', text:'task_id / inner_id / rating / relation 不完整' });
+        return;
+      }
+
+      const payload = {
+        task_id,
+        inner_id,
+        rating: Number(rating),
+        relation: String(relation).toUpperCase(),
+      };
+
+      // 先做「樂觀更新」
+      rowOptimisticUpdate(inner_id, payload.rating, payload.relation);
+
+      // 同步 Offcanvas 徽章
+      document.querySelector('#edit-rating')?.replaceChildren(document.createTextNode(String(payload.rating)));
+      document.querySelector('#edit-relation')?.replaceChildren(document.createTextNode(payload.relation));
+
+      const csrftoken = getCookie('csrftoken');
+      const headers   = { 'Content-Type':'application/json', ...(csrftoken ? { 'X-CSRFToken': csrftoken } : {}) };
+
+      const btn = document.querySelector('#offcanvasRight .btn.btn-success');
+      btn?.setAttribute('disabled','disabled');
+
+      Swal.fire({ title:'更新中…', allowOutsideClick:false, allowEscapeKey:false, didOpen:()=>Swal.showLoading() });
+
+      try {
+        const res  = await fetch(EDIT_URL, {
+          method:'PATCH',
+          headers,
+          credentials:'same-origin',
+          body: JSON.stringify(payload)
+        });
+
+        const ctyp = (res.headers.get('content-type') || '').toLowerCase();
+        const data = ctyp.includes('application/json') ? await res.json() : await res.text();
+
+        if (!res.ok) {
+          const msg = typeof data === 'string' ? data.slice(0,800) : JSON.stringify(data, null, 2).slice(0,800);
+          throw new Error(msg);
+        }
+
+        rowConfirmUpdate(inner_id);
+        Swal.fire({ icon:'success', title:'已更新標註！', timer:900, showConfirmButton:false });
+
+      } catch (err) {
+        console.error(err);
+        rowRevertUpdate(inner_id);
+        Swal.fire({
+          icon:'error',
+          title:'更新失敗',
+          html:`<pre style="text-align:left;white-space:pre-wrap;max-height:50vh;overflow:auto;">${String(err.message).replace(/</g,'&lt;')}</pre>`
+        });
+      } finally {
+        btn?.removeAttribute('disabled');
+      }
+    }
+
+    // =================== 點 row 後開 Offcanvas並渲染內容 ======================
+    function edit_history(data) {
+      if (typeof data === 'string') { try { data = JSON.parse(data); } catch { return; } }
+
+      setEditState(data);
+
+      const target = document.getElementById('offcanvasRight');
+      const oc = bootstrap.Offcanvas.getOrCreateInstance(target);
+      oc.show();
+
+      // 標題
+      target.querySelector('#offcanvasRightLabel').textContent = `${data.num_tasks_with_annotations} / 30000`;
+
+      // 內容
+      const bodyEl = target.querySelector('.offcanvas-body');
+      bodyEl.innerHTML = `
+        <div class="mb-3 text-center">
+          <img src="${escapeHtml(data.image_url)}" class="img-fluid rounded" style="max-height:200px; object-fit:contain;">
+        </div>
+
+        <div class="mb-2"><h1>${escapeHtml(data.query)}</h1></div>
+        <div style="margin-top:25px;margin-bottom:25px" class="mb-2"><div>${escapeHtml(data.IT_NAME)}</div></div>
+
+        <div class="mb-2">
+          <strong>標註 Rating：</strong>
+          <span class="badge bg-primary" id="edit-rating">${window._edit_state.rating}</span>
+        </div>
+
+        <div class="mb-2">
+          <strong>Relation：</strong>
+          <span class="badge bg-secondary" id="edit-relation">${window._edit_state.relation}</span>
+        </div>
+
+        <div class="mt-4 d-grid gap-2">
+          <button class="btn btn-success" onclick="save_edit()">修改標註</button>
+        </div>
+      `;
+    }
+
+    // =================== 渲染表格（append 到表頭；去重） ======================
+    function renderTable(data) {
+      const history = document.getElementById('history');
+      const start   = document.getElementById('start');
+
+      const history_data = Array.isArray(data.history_datas) ? data.history_datas : [];
+      const annotations  = Number(data.annotations) || 0;
+      const innerId      = Number(data.inner_id) || 0;
+
+      window.currentAnnotations = annotations;
+      window.currentInnerId     = innerId;
+
+      if (!window._seenInnerIds) window._seenInnerIds = new Set();
+
+      // 依 inner_id 由小到大排序
+      const sorted = history_data.slice().sort((a, b) => Number(a.inner_id) - Number(b.inner_id));
+
+      let rows = '';
+      for (const d of sorted) {
+        const id = Number(d.inner_id);
+        if (window._seenInnerIds.has(id)) continue;
+        window._seenInnerIds.add(id);
+
+        rows += `
+          <tr
+            data-inner-id="${id}"
+            data-task-id="${d.task_id ?? ''}"
+            data-num-tasks-with-annotations="${d.num_tasks_with_annotations ?? ''}"
+            data-rating="${d.rating ?? ''}"
+            data-relation="${d.relation ?? ''}"
+            data-image-url="${escapeHtml(d.image_url ?? '')}"
+            data-query="${escapeHtml(d.query ?? '')}"
+            data-it-name="${escapeHtml(d.IT_NAME ?? '')}"
+          >
+            <th scope="row">${d.num_tasks_with_annotations}</th>
+            <td class="col-rating">${d.rating ?? ''}</td>
+            <td class="col-relation">${d.relation ?? ''}</td>
+            <td><img style="width: 50px" src="${escapeHtml(d.image_url ?? '')}" alt=""></td>
+            <td>${escapeHtml(d.query ?? '')}</td>
+            <td>${escapeHtml(d.IT_NAME ?? '')}</td>
+          </tr>
+        `;
+      }
+
+      if (rows) {
+        history.insertAdjacentHTML('afterbegin', rows); // 插到表頭
+      }
+
+      const prevEarliest = Number(history.dataset.earliestAnn ?? Infinity);
+      const newEarliest  = Math.min(prevEarliest, annotations);
+      history.dataset.earliestAnn = String(newEarliest);
+      start.innerText = newEarliest;
+    }
+
+    // =================== 載入更早資料 ======================
+    async function previos(event) {
+      if (event) event.preventDefault();
+
+      const currentAnnotationNum = window.currentAnnotations;
+      const currentInnerId       = window.currentInnerId;
+
+      const headers = { 'Content-Type': 'application/json' };
+      const csrftoken = getCookie('csrftoken');
+      if (csrftoken) headers['X-CSRFToken'] = csrftoken;
+
+      const trigger = event?.currentTarget;
+      if (trigger) trigger.setAttribute('disabled', 'disabled');
+
+      let swalOpened = false;
+      Swal.fire({
+        title: '載入更早的標註資料中…',
+        text:'請稍等',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        didOpen: () => { Swal.showLoading(); swalOpened = true; }
+      });
+
+      const controller = new AbortController();
+      const timeoutId  = setTimeout(() => controller.abort(), 15000);
+
+      try {
+        const res = await fetch('/table/', {
+          method: 'POST',
+          headers,
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            current_annotation_num: currentAnnotationNum,
+            current_inner_id: currentInnerId
+          }),
+          signal: controller.signal
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(()=> '');
+          throw new Error(`POST /table/ 失敗：${res.status} ${text}`);
+        }
+
+        const ct   = res.headers.get('content-type') || '';
+        const data = ct.includes('application/json') ? await res.json() : await res.text();
+        renderTable(data);
+
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          Swal.fire({ icon:'error', title:'逾時', text:'伺服器回應逾時，請稍後重試。' });
+        } else {
+          Swal.fire({ icon:'error', title:'錯誤', text: err.message || '發生未知錯誤' });
+        }
+        console.error(err);
+      } finally {
+        clearTimeout(timeoutId);
+        if (swalOpened) Swal.close();
+        if (trigger) trigger.removeAttribute('disabled');
+      }
+    }
+    </script>
 </html>

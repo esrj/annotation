@@ -3,8 +3,8 @@ from django.urls import path
 from main import views
 
 urlpatterns = [
+    path('edit/', views.edit_task, name='edit_task'),
     path('admin/', admin.site.urls),
     path("", views.index, name="index"),
     path("table/", views.table, name="table"),
-
 ]
