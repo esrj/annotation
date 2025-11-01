@@ -73,7 +73,7 @@
 
         <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
           <div class="offcanvas-header">
-            <h2 id="offcanvasRightLabel"></h2>
+            <h3 id="offcanvasRightLabel"></h3>
             <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
           </div>
           <div class="offcanvas-body">
@@ -291,20 +291,21 @@
       oc.show();
 
       // 標題
-      target.querySelector('#offcanvasRightLabel').textContent = `${data.num_tasks_with_annotations} / 30000`;
-
+        target.querySelector('#offcanvasRightLabel').innerHTML =
+        `# ${escapeHtml(data.task_id)}<br>${data.num_tasks_with_annotations} / 30000`;
       // 內容
       const bodyEl = target.querySelector('.offcanvas-body');
       bodyEl.innerHTML = `
         <div class="mb-3 text-center">
           <img src="${escapeHtml(data.image_url)}" class="img-fluid rounded" style="max-height:200px; object-fit:contain;">
         </div>
+        
 
         <div class="mb-2"><h1>${escapeHtml(data.query)}</h1></div>
         <div style="margin-top:25px;margin-bottom:25px" class="mb-2"><div>${escapeHtml(data.IT_NAME)}</div></div>
 
         <div class="mb-2">
-          <strong>標註 Rating：</strong>
+          <strong>Rating：</strong>
           <span class="badge bg-primary" id="edit-rating">${window._edit_state.rating}</span>
         </div>
 
