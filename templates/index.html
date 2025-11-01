@@ -170,7 +170,7 @@
               // 所有卡片：你是用 i 當 index，所以找所有可能的 card-body
               const cards = document.querySelectorAll('.card .card-body');
               cards.forEach((card) => {
-                const titleEl = card.querySelector('h4.card-title');         // 放 query
+                const titleEl = card.querySelector('h3.card-title');         // 放 query
                 const textEl  = card.querySelector('p.card-text');           // 放 IT_NAME
                 if (!titleEl || !textEl) return;
 
