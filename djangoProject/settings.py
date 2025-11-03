@@ -128,6 +128,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LABEL_STUDIO_URL = "https://app.humansignal.com"
 PROJECT_ID = "196349"
 
+# 一次 fetch 幾筆 (盡量 100 以下)
+TOTAL = 50
+
 # 要改
 LABEL_STUDIO_TOKEN = ""
-MY_UID = 102090 # /user/account/membership-info 可以查看
+MY_UID = 102090  # /user/account/membership-info 可以查看

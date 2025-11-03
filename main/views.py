@@ -10,16 +10,16 @@ from datetime import datetime, timezone
 from django.views.decorators.csrf import csrf_exempt
 from concurrent.futures import ThreadPoolExecutor, as_completed
 MAX_WORKERS = 8
-import time
 
 LS_URL = getattr(settings, "LABEL_STUDIO_URL")            # 例如: "https://app.humansignal.com"
 LS_TOKEN = getattr(settings, "LABEL_STUDIO_TOKEN")        # 這是你的 PAT（Personal Access Token）
 PROJECT_ID = int(getattr(settings, "PROJECT_ID"))
 MY_UID = int(getattr(settings, "MY_UID"))
+total = int(getattr(settings, "TOTAL"))
+
 ALLOWED_REL = {'E', 'S', 'C', 'I'}  # ESCI
 FETCH_NUM = 100
 task_ids = []
-total = 50
 
 
 def get_access_token():
@@ -176,7 +176,8 @@ def index(request):
                 "tasks": enumerate(tasks, start=int(num_tasks_with_annotations)+1),
                 "project_id": PROJECT_ID,
                 "annotations":int(num_tasks_with_annotations)+1,
-                "total":total # 這次抽取了幾個
+                "total":total, # 這次抽取了幾個
+                "t": total-1  # 這次抽取了幾個
             })
 
         except requests.HTTPError as e:
@@ -338,6 +339,7 @@ def table(request):
             "history_datas": history_datas,
             "annotations": start_ann_num + 1,
             "inner_id": start_inner_id + 1,
+            "t":total-1
         })
     if request.method == 'POST':
         try:
@@ -358,16 +360,12 @@ def table(request):
         start_inner_id = current_inner_id - FETCH_NUM - 1
         start_ann_num  = current_annotation_num - FETCH_NUM -1
 
-        print(current_annotation_num)  # 6638-6737  ->  6538-6637
-        print(start_ann_num)
-
         tasks = get_unlabeled_task(
             project_id=PROJECT_ID,
             token=access,
             inner_id=start_inner_id - 1,
             page=FETCH_NUM
         )
-        print(len(tasks))
 
         history_datas, end_inner_id, end_ann_num = build_history_rows(
             tasks, start_inner_id, start_ann_num

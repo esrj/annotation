@@ -56,7 +56,7 @@
                           <ul class="pagination mb-0">
 
                             <li class="page-item">
-                              <a style="color: #1a8755" class="page-link">    {{ annotations }} ~ {{ annotations|add:49 }}</a>
+                              <a style="color: #1a8755" class="page-link">{{ annotations }}~{{ annotations|add:t}}</a>
                             </li>
 
                           </ul>
@@ -88,12 +88,12 @@
                             <h6 class="card-title">{{ i }}/30000</h6>
 
                             <div class="d-flex justify-content-between align-items-center" style="margin-top: 15px;margin-bottom: 15px">
-                                <h3 class="card-title mb-0">{{ task.data.query }}</h3>
+                                <h4 class="card-title mb-0">{{ task.data.query }}</h4>
 
                                 <a href="https://www.google.com/search?q={{ task.data.query }}"
                                    target="_blank"
                                    rel="noopener noreferrer"
-                                   style="text-decoration: none; color: #979797; background: #f1f1f1; padding: 2px 8px; border-radius: 15px; font-size: 14px;">
+                                   style="text-decoration: none; color: #979797; background: #f1f1f1; padding: 2px 8px; border-radius: 15px; font-size: 12px;">
                                   google 搜尋
                                 </a>
                             </div>
@@ -170,7 +170,7 @@
               // 所有卡片：你是用 i 當 index，所以找所有可能的 card-body
               const cards = document.querySelectorAll('.card .card-body');
               cards.forEach((card) => {
-                const titleEl = card.querySelector('h3.card-title');         // 放 query
+                const titleEl = card.querySelector('h4.card-title');         // 放 query
                 const textEl  = card.querySelector('p.card-text');           // 放 IT_NAME
                 if (!titleEl || !textEl) return;
 
@@ -197,9 +197,7 @@
               });
             })();
 
-
-
-
+        
         // ========================== 所有快捷設定 ==========================
         let id_ = Number({{ annotations }});
         let total = Number({{ total }});
@@ -209,24 +207,28 @@
           showLoader();
 
           const BASE = id_;
-          const MAX  = BASE + total - 1; // 本頁 10 張卡
+          const MAX  = BASE + total - 1;
           let $type  = document.getElementById(`type_${current_id}`);
 
           let currentNum = null; // 0~4
           let currentAux = null; // i/e/s/c
           let lastCombo  = null;
 
-            function highlightCard(id, { scroll = false } = {}) {
-              const el = document.getElementById(`card_${id}`);
-              if (!el) return;
-              document.querySelectorAll('.card-active').forEach(x => x.classList.remove('card-active'));
-              el.classList.remove('card-default');
-              el.classList.add('card-active');
+          const lastAuxByNum = {
+              '0':'i','1':'i','2':'c','3':'e','4':'e'
+          };
+          const lastAuxByType = {
+              'i':'0','c':'2','s':'2','e':'4',
+          };
 
-              if (scroll) {
-                el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-              }
-            }
+          function highlightCard(id, { scroll = false } = {}) {
+            const el = document.getElementById(`card_${id}`);
+            if (!el) return;
+            document.querySelectorAll('.card-active').forEach(x => x.classList.remove('card-active'));
+            el.classList.remove('card-default');
+            el.classList.add('card-active');
+            if (scroll) el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+          }
           function dimCard(id) {
             const el = document.getElementById(`card_${id}`);
             if (!el) return;
@@ -246,95 +248,146 @@
           }
 
           function mapKey(ev) {
-            const k = ev.key;
-            const c = ev.code;
+              const c = ev.code;
 
-            if (ev.ctrlKey || ev.metaKey) return null; // ← 關鍵：Ctrl/⌘ 組合給導航用
+              if (ev.ctrlKey || ev.metaKey) return null;
 
-            // 類型組
-            if (k === 'Tab') return { type: 'aux', value: 'i', prevent: true };
-            if (k === 'e' || k === 'E') return { type: 'aux', value: 'e' };
-            if (k === 's' || k === 'S') return { type: 'aux', value: 's' };
-            if (k === 'c' || k === 'C') return { type: 'aux', value: 'c' };
+              // 類型組（用 code，避免被輸入法影響）
+              if (c === 'Tab')         return { type: 'aux', value: 'i', prevent: true };
+              if (c === 'KeyE')        return { type: 'aux', value: 'e' };
+              if (c === 'KeyS')        return { type: 'aux', value: 's' };
+              if (c === 'KeyC')        return { type: 'aux', value: 'c' };
 
-            // 數字組
-            if (k === '`' || c === 'Backquote') return { type: 'num', value: '0' };
-            if (k === '1' || c === 'Digit1' || c === 'Numpad1') return { type: 'num', value: '1' };
-            if (k === '2' || c === 'Digit2' || c === 'Numpad2') return { type: 'num', value: '2' };
-            if (k === '3' || c === 'Digit3' || c === 'Numpad3') return { type: 'num', value: '3' };
-            if (k === '4' || c === 'Digit4' || c === 'Numpad4') return { type: 'num', value: '4' };
+              // 數字組（同樣用 code）
+              if (c === 'Backquote')   return { type: 'num', value: '0' };
+              if (c === 'Digit1' || c === 'Numpad1') return { type: 'num', value: '1' };
+              if (c === 'Digit2' || c === 'Numpad2') return { type: 'num', value: '2' };
+              if (c === 'Digit3' || c === 'Numpad3') return { type: 'num', value: '3' };
+              if (c === 'Digit4' || c === 'Numpad4') return { type: 'num', value: '4' };
 
-            return null;
-          }
+              return null;
+            }    
 
           function updateDisplay() {
-            if (!$type) return;
-            const combo = (currentNum || '_') + (currentAux || '_');
-            $type.textContent = combo;
-            if (combo !== lastCombo) lastCombo = combo;
+              if (!$type) return;
+              // 只在 null/undefined 時才用 '_'，不會把 0 誤當空
+              const left  = currentNum  != null ? String(currentNum)  : '_';
+              const right = currentAux  ?? '_';
+              const combo = left + right;
+              $type.textContent = combo;
+              if (combo !== lastCombo) lastCombo = combo;
+          }
+          
+          function getCurrent(){
+              $type = document.getElementById(`type_${current_id}`);
+              if (!$type) return;
+              return $type.innerText
+          }
+          
+          function resetCurrent(){
+              currentAux = null;
+              currentNum = null
+              if (getCurrent() !== '_'){
+                  let temp = getCurrent()
+                  currentAux = temp[1]
+                  currentNum = temp[0]
+              }
           }
 
           window.addEventListener('keydown', (ev) => {
-            if (ev.isComposing || ev.keyCode === 229) return;
+              // 先把鍵盤映射出來（用 code 抓到熱鍵）
+              const res = mapKey(ev);
+              if (!res) {
+                // 不是我們的熱鍵：這時候才可以因為組字而忽略
+                if (ev.isComposing || ev.keyCode === 229) return;
+                return;
+              }
 
-            const res = mapKey(ev);
-            if (!res) return;
+              // 我們的熱鍵：就算 isComposing 也要吃掉
+              if (res.prevent) ev.preventDefault();
 
-            if (res.prevent) ev.preventDefault(); // Tab 不跳焦點
+              if (res.type === 'num') {
+                const num = String(res.value);
+                if (currentAux == null) currentAux = lastAuxByNum[num]; // 用預設英文
+                currentNum = num;                                       // 覆蓋數字
+                $type = document.getElementById(`type_${current_id}`);
+                updateDisplay();
+                return;
+              }
 
-            if (res.type === 'num') {
-              currentNum = res.value;
-              $type = document.getElementById(`type_${current_id}`);
-              updateDisplay();
-              return;
-            }
-            if (res.type === 'aux') {
-              currentAux = res.value;
-              $type = document.getElementById(`type_${current_id}`);
-              updateDisplay();
-              return;
-            }
-          });
+              if (res.type === 'aux') {
+                const aux = res.value;
+                if (currentNum == null) currentNum = lastAuxByType[aux]; // 用預設數字
+                currentAux = aux;                                        // 覆蓋英文
+                $type = document.getElementById(`type_${current_id}`);
+                updateDisplay();
+                return;
+              }
+            });
+
 
           window.addEventListener('keydown', (ev) => {
-            if (ev.isComposing || ev.keyCode === 229) return;
-
-            const prev = current_id;
-
-            if ((ev.ctrlKey /*|| ev.metaKey*/) && (ev.key === '`' || ev.code === 'Backquote')) {
-              current_id = clampId(current_id + 1);
-              applySelectionChange(prev);   // ← 這裡就高亮
-              ev.preventDefault();
-              return;
-            }
-
-            switch (ev.key) {
-              case 'ArrowUp':
-                current_id = clampId(current_id - 5);
-                break;
-              case 'ArrowDown':
-                current_id = clampId(current_id + 5);
-                break;
-              case 'ArrowLeft':
-                current_id = clampId(current_id - 1);
-                break;
-              case 'ArrowRight':
+              if (ev.isComposing || ev.keyCode === 229) return;
+    
+              const prev = current_id;
+    
+              // Ctrl+`：下一張
+              if ((ev.ctrlKey) && (ev.key === '`' || ev.code === 'Backquote')) {
                 current_id = clampId(current_id + 1);
-                break;
-              default:
+                applySelectionChange(prev);
+                ev.preventDefault();          // ← 阻止預設行為
+                  
+                resetCurrent()
+                  
+                  
                 return;
-            }
-            applySelectionChange(prev);
-          });
+              }
+    
+              // === 方向鍵導覽 ===
+              const GRID_COLS = 5;            // 你的版面一列 5 張卡，之後改版只要改這裡
+              let handledNav = false;
+    
+              switch (ev.key) {
+                case 'ArrowUp':
+                  current_id = clampId(current_id - GRID_COLS);
+                  handledNav = true;
+                  resetCurrent()
+                  break;
+                case 'ArrowDown':
+                  current_id = clampId(current_id + GRID_COLS);
+                  handledNav = true;
+                  resetCurrent()
+                  break;
+                case 'ArrowLeft':
+                  current_id = clampId(current_id - 1);
+                  handledNav = true;
+                  resetCurrent()
+                  break;
+                case 'ArrowRight':
+                  current_id = clampId(current_id + 1);
+                  handledNav = true;
+                  resetCurrent()
+                  break;
+                default:
+                  return; // 非導航鍵
+              }
+    
+              // 阻止瀏覽器用上下鍵捲動整頁
+              ev.preventDefault();
+    
+              if (prev !== current_id) {
+                // 有換卡 → 高亮並置中
+                applySelectionChange(prev);
+              } else {
+                // 沒換卡（例如已在第一列又按 ArrowUp）→ 也強制置中目前卡片
+                highlightCard(current_id, { scroll: true });
+              }
+            });
 
           hideLoader();
-
         })();
-
-
-
-
-
+            
+        
         // ========================== request ==========================
 
         function getCookie(name){
@@ -342,61 +395,82 @@
           return m ? m.pop() : null;
         }
 
-        function gatherBatch(baseId, count ) {
+        function gatherBatch(baseId, count) {
           const out = [];
+          let unlabeled = 0;
+        
           for (let i = baseId; i < baseId + count; i++) {
             const el = document.getElementById(`type_${i}`);
-            const combo = (el && el.textContent || '').trim();
-
-            const num = combo[0] && '01234'.includes(combo[0]) ? combo[0] : null;
-            const aux = combo[1] && 'iesc'.includes(combo[1]) ? combo[1] : null;
-
+            const comboText = el?.textContent?.trim() ?? '';
+        
+            const first  = comboText[0] ?? '';
+            const second = comboText[1] ?? '';
+        
+            const num = '01234'.includes(first) ? first : null;
+            const aux = 'iesc'.includes(second) ? second : null;
+        
+            if (num == null || aux == null) unlabeled += 1;
+        
             out.push({
-              index: i,          // 你的 i
-              num,               // '0'~'4' 或 null
-              aux,               // 'i'|'e'|'s'|'c' 或 null
-              combo: (num ?? '_') + (aux ?? '_')
+              index: i,
+              num,                      // '0'~'4' 或 null
+              aux,                      // 'i'|'e'|'s'|'c' 或 null
+              combo: `${num ?? '_'}${aux ?? '_'}` // 只有顯示用才補底線
             });
           }
-          return out;
+        
+          console.log(out.length);
+          return { out, unlabeled }; // 用物件回傳多值
         }
 
-        async function postBatchLabels(baseId, count ) {
-          const batch = gatherBatch(baseId, count);
+    
+            
+        async function postBatchLabels(batch) {
           const headers = { 'Content-Type': 'application/json' };
-
           const csrftoken = getCookie('csrftoken');
           if (csrftoken) headers['X-CSRFToken'] = csrftoken;   // Django 需要
-
+        
           const res = await fetch('/', {
             method: 'POST',
             headers,
             body: JSON.stringify({ batch }),   // 後端就收 { "batch": [...] }
             credentials: 'same-origin'
           });
-
+        
           if (!res.ok) {
             const text = await res.text().catch(()=>'');
             throw new Error(`POST / 失敗：${res.status} ${text}`);
           }
-          // 後端若回 JSON 就 parse，否則回 {}
           try { return await res.json(); } catch { return {}; }
-        }
-        window.addEventListener('beforeunload', () => {
-          if (typeof showLoader === 'function') showLoader();
-        });
+        }    
 
         window.addEventListener('keydown', async (e) => {
           // 避免在輸入框裡誤觸
           const t = e.target, tag = (t.tagName || '').toLowerCase();
           const isTyping = tag === 'input' || tag === 'textarea' || t.isContentEditable;
           if (isTyping) return;
-
+        
           if (e.key === 'Enter') {
             e.preventDefault();
             e.stopPropagation();
-
-            // ① 先出現「寫入中…」的 Swal（只有這裡用 Swal）
+        
+            // 先蒐集本批資料
+            const { out: batch, unlabeled } = gatherBatch(id_, total);
+        
+            // 若有未標註，先問使用者是否送出
+            if (unlabeled > 0) {
+              const res = await Swal.fire({
+                icon: 'warning',
+                title: '仍有未標註項目',
+                html: `共有 <b>${unlabeled}</b> 筆未標註，確定要送出嗎？`,
+                showCancelButton: true,
+                confirmButtonText: '送出',
+                cancelButtonText: '先檢查'
+              });
+              if (!res.isConfirmed) return; // 使用者取消 → 不做事
+            }
+        
+            // 顯示「寫入中…」並送出
             Swal.fire({
               title: '寫入中…',
               html: '請稍候',
@@ -404,28 +478,26 @@
               allowEscapeKey: false,
               didOpen: () => Swal.showLoading()
             });
-
+        
             try {
-              const r = await postBatchLabels(id_, total);   // ← 你的寫入 API，要回傳 Promise/JSON
-
-              // 關掉「寫入中…」的 Swal
+              const r = await postBatchLabels(batch);
+        
               Swal.close();
-
+        
+              // 維持你原本的成功判斷
               if (r && r.errno === true) {
-                // ② 寫入成功 → 切換成全頁轉圈圈（overlay），接著導頁/重整
                 if (typeof showLoader === 'function') showLoader();
-                    window.scrollTo({ top: 0 });
-                    location.reload();          // 或 location.href = `?start=${id_+10}`;
-                } else {
-                    Swal.fire({ icon: 'error', title: '系統錯誤', text: '請聯絡管理員' });
-                }
-              } catch (err) {
-                  Swal.close();
-                  Swal.fire({ icon: 'error', title: '網路錯誤', text: err?.message || '請稍後再試' });
-                }
+                window.scrollTo({ top: 0 });
+                location.reload(); // 或 location.href = `?start=${id_+10}`;
+              } else {
+                Swal.fire({ icon: 'error', title: '系統錯誤', text: '請聯絡管理員' });
               }
-            });
-
+            } catch (err) {
+              Swal.close();
+              Swal.fire({ icon: 'error', title: '網路錯誤', text: err?.message || '請稍後再試' });
+            }
+          }
+        })
 
     </script>
 
