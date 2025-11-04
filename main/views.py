@@ -168,6 +168,7 @@ def index(request):
             inner_id,num_tasks_with_annotations = (get_views_id(project_id=PROJECT_ID, access_token=access))
 
             tasks = get_unlabeled_task(project_id=PROJECT_ID, token=access,inner_id=inner_id-1,page = total)
+            total_fetch = len(tasks)
 
             global task_ids
             task_ids = [task["id"] for task in tasks]
@@ -176,8 +177,8 @@ def index(request):
                 "tasks": enumerate(tasks, start=int(num_tasks_with_annotations)+1),
                 "project_id": PROJECT_ID,
                 "annotations":int(num_tasks_with_annotations)+1,
-                "total":total, # 這次抽取了幾個
-                "t": total-1  # 這次抽取了幾個
+                "total":total_fetch, # 這次抽取了幾個
+                "t": total_fetch-1  # 這次抽取了幾個
             })
 
         except requests.HTTPError as e:
@@ -339,7 +340,7 @@ def table(request):
             "history_datas": history_datas,
             "annotations": start_ann_num + 1,
             "inner_id": start_inner_id + 1,
-            "t":total-1
+            "t":FETCH_NUM-1 #
         })
     if request.method == 'POST':
         try:
