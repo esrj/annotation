@@ -65,10 +65,7 @@
                     </li>
 
                 </ul>
-                <form class="d-flex">
-                    <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-                    <button class="btn btn-outline-success" type="submit">Search</button>
-                </form>
+                <button class="btn btn-outline-success" onclick="info()">標註說明</button>
               </div>
 
             </div>
@@ -121,6 +118,46 @@
     </body>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
     <script>
+
+
+        function info(){
+            Swal.fire({
+                width: 800,
+                html: `
+                    <div style="text-align:left;color: black">
+                      <div>
+                        <h5>商品與查詢文字之間的相關程度</h5>
+                        <p>4 分，完全符合。例如，查詢「iPhone 15 Pro 256G」，商品為「Apple iPhone 15 Pro 256GB 藍色」</p>
+                        <p>3 分，高度相關。例如，查詢「母親節禮物」，商品為「康乃馨花束」。</p>
+                        <p>2 分，中度相關。例如，查詢「冰箱」，商品為「冰箱專用保鮮盒」。</p>
+                        <p>1 分，模糊相關。例如，查詢「Iphone 15」，商品為「行動電源 (適用iphone 15)」。</p>
+                        <p>0 分，無關。例如，查詢「美國隊長」，商品為「理財周刊第837期：美國隊長再發威 (電子書)」。</p>
+                      </div>
+                      <div>
+                        <h5>商品與查詢文字之間的關係</h5>
+                        <p>Exact (E)：完全符合。例如，查詢「塑膠水瓶」，商品為「塑膠水瓶 24oz」。</p>
+                        <p>Substitute (S)：替代品。例如，查詢「毛衣」，商品為「刷毛上衣」。</p>
+                        <p>Complement (C)：互補品。例如，查詢「Iphone」，商品為「Iphone手機殼」。</p>
+                        <p>Irrelevant (I)：無關。例如，查詢「餐具」，商品為「襪子」。</p>
+                      </div>
+                    </div>
+                    <hr style="margin-top: 40px;margin-bottom: 20px">
+                    <div style="display: flex">
+                        <div style="padding: 20px">
+                            <img src=/static/info.png  style="width: 195px"/>
+                        </div>
+                        <div style="text-align: left;padding: 20px;">
+                            <p><strong style="color: #1a8755">吐司三明治</strong> : 一種三明治料理，做法是在兩片未烤的吐司之間夾一片烤吐司</p>
+                            <p><strong style="color: #1a8755">起源地</strong> : 英國</p>
+                            <p><strong style="color: #1a8755">主要成分</strong> : 吐司、烤吐司</p>
+                        </div>
+
+                    </div>
+                  `,
+                  showConfirmButton: false,
+
+                });
+        }
 
 
         // ========================== loading  ==========================

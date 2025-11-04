@@ -118,7 +118,11 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = "/static/"
-
+# 使程式載入 static 中的檔案
+STATICFILES_DIRS = (
+    [BASE_DIR / 'static']
+)
+STATIC_ROOT = "/static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -131,6 +135,6 @@ PROJECT_ID = "196349"
 # 一次 fetch 幾筆 (盡量 100 以下)
 TOTAL = 50
 
-# 要改
+# 要改 (重要)
 LABEL_STUDIO_TOKEN = ""
-MY_UID = 102090  # /user/account/membership-info 可以查看
+MY_UID = 102090  # /user/account/membership-info 可以查看，改成自己的 user id (重要)
